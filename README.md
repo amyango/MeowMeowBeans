@@ -1,2 +1,2 @@
 # MeowMeowBeans
-meowmeowbeans discord box
+meowmeowbeans discord bot
