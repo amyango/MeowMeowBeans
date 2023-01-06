@@ -1,6 +1,13 @@
 import discord
 from discord.ext import commands
 
+import requests
+import json
+
+api_url = "https://kitsu.io/api/edge/anime?filter[text]="
+
+
+
 # test
 print("hello world")
 
@@ -13,9 +20,19 @@ bot = commands.Bot(command_prefix='/', intents=intents, debug_guilds=["103831254
 
 @bot.command(description='Hello this is MeowMeowbeans',)
 async def mmb(ctx, arg=''):
-    await ctx.send(ctx.guild.id)
+
     if arg == '':
         await ctx.send("Type an anime name")
+        return
+    
+    response = requests.get(api_url + arg)
+    json_response = json.loads(response.text)
+    animu = json_response["data"][0]
+    nameu = animu["attributes"]["titles"]["ja_jp"]
+    posteru = animu["attributes"]["posterImage"]["large"]
+
+    await ctx.send(nameu)
+    await ctx.send(posteru)
 
 @client.event
 async def on_ready():
