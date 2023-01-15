@@ -28,11 +28,24 @@ async def mmb(ctx, arg=''):
     response = requests.get(api_url + arg)
     json_response = json.loads(response.text)
     animu = json_response["data"][0]
-    nameu = animu["attributes"]["titles"]["ja_jp"]
+
+    print(animu["attributes"]["titles"])
+
+    nameu = "Japanese Name Not Found"
+    if "ja_jp" in animu["attributes"]["titles"]:
+        nameu = animu["attributes"]["titles"]["ja_jp"]
+
     posteru = animu["attributes"]["posterImage"]["large"]
+    name = "English Name Not Found"
+        
+    if "en" in animu["attributes"]["titles"]:
+        name = animu["attributes"]["titles"]["en"]
+    elif "en_us" in animu["attributes"]["titles"]:
+        name = animu["attributes"]["titles"]["en_us"]
 
     await ctx.send(nameu)
     await ctx.send(posteru)
+    await ctx.send(name)
 
 @client.event
 async def on_ready():
