@@ -3,10 +3,9 @@ from discord.ext import commands
 
 import requests
 import json
+import urllib
 
-api_url = "https://kitsu.io/api/edge/anime?filter[text]="
-
-
+api_url = "https://api.jikan.moe/v4/anime"
 
 # test
 print("hello world")
@@ -25,27 +24,43 @@ async def mmb(ctx, arg=''):
         await ctx.send("Type an anime name")
         return
     
-    response = requests.get(api_url + arg)
+    # We need to fix how it picks the top result
+    # Also it can't handle multiple words at a time... not sure why
+    payload = dict(q=arg, limit=1, order_by="popularity", sort = "asc", type="tv")
+    urllib.parse.urlencode(payload)
+    
+    response = requests.get(api_url, params = payload)
     json_response = json.loads(response.text)
-    animu = json_response["data"][0]
+    animu = json_response["data"]
 
-    print(animu["attributes"]["titles"])
-
-    nameu = "Japanese Name Not Found"
-    if "ja_jp" in animu["attributes"]["titles"]:
-        nameu = animu["attributes"]["titles"]["ja_jp"]
-
-    posteru = animu["attributes"]["posterImage"]["large"]
-    name = "English Name Not Found"
-        
-    if "en" in animu["attributes"]["titles"]:
-        name = animu["attributes"]["titles"]["en"]
-    elif "en_us" in animu["attributes"]["titles"]:
-        name = animu["attributes"]["titles"]["en_us"]
+    #ama is very cool and she wrote cool code
+    #RACHIE WROTE 99% OF THE CODE 
+    #LIES
+    nameu = animu[0]["title_japanese"]
+    posteru = animu[0]["images"]["jpg"]["image_url"]
+    name = animu[0]["title_english"]
 
     await ctx.send(nameu)
     await ctx.send(posteru)
     await ctx.send(name)
+
+    mal_id = animu[0]["mal_id"]
+    char_url = api_url + "/" + str(mal_id) + "/characters"
+    response = requests.get(char_url)
+    json_response = json.loads(response.text)
+    char = json_response["data"]
+    await ctx.send(char[0]["character"]["name"])
+    await ctx.send(char[0]["character"]["images"]["jpg"]["image_url"])
+
+    #get japanese voice actor (rachie hates the english)
+
+    await ctx.send(char[0]["voice_actors"][0]["person"]["name"])
+    await ctx.send(char[0]["voice_actors"][0]["person"]["images"]["jpg"]["image_url"])
+
+    # Let us pick a specific character in the animu so rachie can see her
+    # favorite hot ones
+    
+    #search for seiyuu uwu
 
 @client.event
 async def on_ready():
