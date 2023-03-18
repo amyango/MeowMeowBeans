@@ -17,45 +17,109 @@ intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 bot = commands.Bot(command_prefix='/', intents=intents, debug_guilds=["1038312545813012480"])
 
+def print_json(dict):
+    json_object = json.dumps(dict, indent=4)
+    print(json_object)
+
+@bot.command(description='Search for a Voice Actor',)
+async def va(ctx, *, arg=''):
+    
+    if arg == '':
+        await ctx.send("Type a persón")
+        return
+
+    people_url = "https://api.jikan.moe/v4/people"
+    payload = dict(q=arg, limit=1)
+    urllib.parse.urlencode(payload)
+
+    response = requests.get(people_url, params=payload)
+    json_response = json.loads(response.text)
+    person = json_response["data"][0]
+
+    print_json(person)
+    nameu = person["name"]
+    pic = person["images"]["jpg"]["image_url"]
+
+    embed=discord.Embed(title=nameu, color=0xFF5733, description = person["about"])
+    embed.set_thumbnail(url=pic)
+    embed.add_field(name = "Bday :D", value = person["birthday"])
+
+    await ctx.send(embed=embed)
+
+@bot.command(description='Search for a Character',)
+async def char(ctx, *, arg=''):
+    
+    if arg == '':
+        await ctx.send("Type a character")
+        return
+
+    people_url = "https://api.jikan.moe/v4/characters"
+    payload = dict(q=arg, limit=1)
+    urllib.parse.urlencode(payload)
+
+    response = requests.get(people_url, params=payload)
+    json_response = json.loads(response.text)
+    person = json_response["data"][0]
+
+    print_json(json_response)
+
+    nameu = person["name"]
+    pic = person["images"]["jpg"]["image_url"]
+
+    embed=discord.Embed(title=nameu, color=0xFF5733, description = person["about"])
+    embed.set_thumbnail(url=pic)
+    # embed.add_field(name = "Bday :D", value = person["birthday"])
+
+    await ctx.send(embed=embed)
+
 @bot.command(description='Hello this is MeowMeowbeans',)
-async def mmb(ctx, arg=''):
+async def mmb(ctx, *, arg=''):
 
     if arg == '':
         await ctx.send("Type an anime name")
         return
-    
-    # We need to fix how it picks the top result
-    # Also it can't handle multiple words at a time... not sure why
-    payload = dict(q=arg, limit=1, order_by="popularity", sort = "asc", type="tv")
+
+    payload = dict(q=arg, limit=10, order_by="popularity", sort = "asc", type="tv")
     urllib.parse.urlencode(payload)
     
-    response = requests.get(api_url, params = payload)
+    response = requests.get(api_url, params=payload)
     json_response = json.loads(response.text)
     animu = json_response["data"]
+
+    anime = animu[0]
+
+    for a in animu:
+        if a["popularity"] != 0:
+            anime = a
+            break
 
     #ama is very cool and she wrote cool code
     #RACHIE WROTE 99% OF THE CODE 
     #LIES
-    nameu = animu[0]["title_japanese"]
-    posteru = animu[0]["images"]["jpg"]["image_url"]
-    name = animu[0]["title_english"]
+    nameu = anime["title_japanese"]
+    posteru = anime["images"]["jpg"]["image_url"]
+    name = anime["title_english"]
 
-    await ctx.send(nameu)
-    await ctx.send(posteru)
-    await ctx.send(name)
-
-    mal_id = animu[0]["mal_id"]
+    embed=discord.Embed(title=nameu, color=0xFF5733)
+    embed.set_thumbnail(url=posteru)
+    
+    mal_id = anime["mal_id"]
     char_url = api_url + "/" + str(mal_id) + "/characters"
     response = requests.get(char_url)
     json_response = json.loads(response.text)
-    char = json_response["data"]
-    await ctx.send(char[0]["character"]["name"])
-    await ctx.send(char[0]["character"]["images"]["jpg"]["image_url"])
+    characters = json_response["data"]
 
-    #get japanese voice actor (rachie hates the english)
+    for char in characters:
+        ch = char["character"]["name"]
+        va = ""
 
-    await ctx.send(char[0]["voice_actors"][0]["person"]["name"])
-    await ctx.send(char[0]["voice_actors"][0]["person"]["images"]["jpg"]["image_url"])
+        for v in char["voice_actors"]:
+            if v["language"] == "Japanese":
+                va = v["person"]["name"]
+
+        embed.add_field(name=ch, value=va, inline=True)
+
+    await ctx.send(embed=embed)
 
     # Let us pick a specific character in the animu so rachie can see her
     # favorite hot ones
