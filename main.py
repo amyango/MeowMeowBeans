@@ -46,6 +46,13 @@ async def va(ctx, *, arg=''):
 
     await ctx.send(embed=embed)
 
+def get_url(url, load):
+    print(url)
+    response = requests.get(url, params=load)
+    json_response = json.loads(response.text)
+    print_json(json_response)
+    return json_response["data"]
+
 @bot.command(description='Search for a Character',)
 async def char(ctx, *, arg=''):
     
@@ -59,15 +66,39 @@ async def char(ctx, *, arg=''):
 
     response = requests.get(people_url, params=payload)
     json_response = json.loads(response.text)
+
+    if len(json_response["data"]) < 1:
+        await ctx.send("No Results Found")
+        return
+
     person = json_response["data"][0]
 
-    print_json(json_response)
+    # print_json(json_response)
 
     nameu = person["name"]
     pic = person["images"]["jpg"]["image_url"]
+    char_id = person["mal_id"]
+
+    char_url = people_url + "/" + str(char_id) + "/full"
+    
+    character = get_url(char_url, dict())
+    print_json(character)
+
+    va = ""
+    va_url = ""
+
+    for v in character["voices"]:
+        if v["language"] == "Japanese":
+            va = v["person"]["name"]
+            va_url = v["person"]["images"]["jpg"]["image_url"]
+            break
 
     embed=discord.Embed(title=nameu, color=0xFF5733, description = person["about"])
     embed.set_thumbnail(url=pic)
+    if va != "":
+        embed.add_field(name="Voice Actor", value=va)
+    if va_url:
+        embed.set_image(url=va_url)
     # embed.add_field(name = "Bday :D", value = person["birthday"])
 
     await ctx.send(embed=embed)
@@ -78,6 +109,10 @@ async def mmb(ctx, *, arg=''):
     if arg == '':
         await ctx.send("Type an anime name")
         return
+    
+    # TODO: Fix search results to return the closest 
+    # title match, if nothing matches then return the
+    # #1 most popular match
 
     payload = dict(q=arg, limit=10, order_by="popularity", sort = "asc", type="tv")
     urllib.parse.urlencode(payload)
@@ -100,7 +135,7 @@ async def mmb(ctx, *, arg=''):
     posteru = anime["images"]["jpg"]["image_url"]
     name = anime["title_english"]
 
-    embed=discord.Embed(title=nameu, color=0xFF5733)
+    embed=discord.Embed(title=nameu, description=name, color=0xFF5733)
     embed.set_thumbnail(url=posteru)
     
     mal_id = anime["mal_id"]
@@ -116,6 +151,7 @@ async def mmb(ctx, *, arg=''):
         for v in char["voice_actors"]:
             if v["language"] == "Japanese":
                 va = v["person"]["name"]
+                break
 
         embed.add_field(name=ch, value=va, inline=True)
 
