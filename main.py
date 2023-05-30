@@ -7,11 +7,8 @@ import urllib
 
 api_url = "https://api.jikan.moe/v4/anime"
 
-# test
-print("hello world")
-
 # READ THE SUPER SECRET TOKEN
-key_file = open("/workspaces/MeowMeowBeans/credentials/meowmeowbeans.token", "r", encoding='ascii')
+key_file = open("credentials/meowmeowbeans.token", "r", encoding='ascii')
 
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
@@ -53,6 +50,7 @@ def get_url(url, load):
     print_json(json_response)
     return json_response["data"]
 
+# TODO: Fix this, not returning the right character if full name is not given
 @bot.command(description='Search for a Character',)
 async def char(ctx, *, arg=''):
     
@@ -61,7 +59,7 @@ async def char(ctx, *, arg=''):
         return
 
     people_url = "https://api.jikan.moe/v4/characters"
-    payload = dict(q=arg, limit=1)
+    payload = dict(q=arg, limit=1, order_by="favorites", sort="desc")
     urllib.parse.urlencode(payload)
 
     response = requests.get(people_url, params=payload)
@@ -175,9 +173,6 @@ async def on_message(message):
 
     if message.content.startswith('/mmb'):
         await message.channel.send('meowmeowbeans is alive')
-
-# Connect to Kitsu Anime API thinggy
-#   This will let us search for Animus that the user wants to look at
 
 bot.run(key_file.read())
 #client.run(key_file.read())
