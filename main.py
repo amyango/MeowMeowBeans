@@ -8,7 +8,7 @@ import urllib
 api_url = "https://api.jikan.moe/v4/anime"
 
 # READ THE SUPER SECRET TOKEN
-key_file = open("credentials/meowmeowbeans.token", "r", encoding='ascii')
+key_file = open("credentials/discord.token", "r", encoding='ascii')
 
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
@@ -50,7 +50,7 @@ def get_url(url, load):
     print_json(json_response)
     return json_response["data"]
 
-# TODO: Fix this, not returning the right character if full name is not given
+
 @bot.command(description='Search for a Character',)
 async def char(ctx, *, arg=''):
     
@@ -70,15 +70,10 @@ async def char(ctx, *, arg=''):
         return
 
     person = json_response["data"][0]
-
-    # print_json(json_response)
-
     nameu = person["name"]
     pic = person["images"]["jpg"]["image_url"]
     char_id = person["mal_id"]
-
     char_url = people_url + "/" + str(char_id) + "/full"
-    
     character = get_url(char_url, dict())
     print_json(character)
 
@@ -97,38 +92,11 @@ async def char(ctx, *, arg=''):
         embed.add_field(name="Voice Actor", value=va)
     if va_url:
         embed.set_image(url=va_url)
-    # embed.add_field(name = "Bday :D", value = person["birthday"])
 
     await ctx.send(embed=embed)
 
-@bot.command(description='Hello this is MeowMeowbeans',)
-async def mmb(ctx, *, arg=''):
-
-    if arg == '':
-        await ctx.send("Type an anime name")
-        return
-    
-    # TODO: Fix search results to return the closest 
-    # title match, if nothing matches then return the
-    # #1 most popular match
-
-    payload = dict(q=arg, limit=10, order_by="popularity", sort = "asc", type="tv")
-    urllib.parse.urlencode(payload)
-    
-    response = requests.get(api_url, params=payload)
-    json_response = json.loads(response.text)
-    animu = json_response["data"]
-
-    anime = animu[0]
-
-    for a in animu:
-        if a["popularity"] != 0:
-            anime = a
-            break
-
-    #ama is very cool and she wrote cool code
-    #RACHIE WROTE 99% OF THE CODE 
-    #LIES
+# Return an embed with information about anime
+def format_anime(anime):
     nameu = anime["title_japanese"]
     posteru = anime["images"]["jpg"]["image_url"]
     name = anime["title_english"]
@@ -152,13 +120,31 @@ async def mmb(ctx, *, arg=''):
                 break
 
         embed.add_field(name=ch, value=va, inline=True)
+    return embed
 
-    await ctx.send(embed=embed)
+# /mmb command
+@bot.command(description='Return information about an anime',)
+async def mmb(ctx, *, arg=''):
 
-    # Let us pick a specific character in the animu so rachie can see her
-    # favorite hot ones
+    if arg == '':
+        await ctx.send("Type an anime name")
+        return
     
-    #search for seiyuu uwu
+    payload = dict(q=arg, limit=10, order_by="popularity", sort = "asc", type="tv")
+    urllib.parse.urlencode(payload)
+    
+    response = requests.get(api_url, params=payload)
+    json_response = json.loads(response.text)
+    animu = json_response["data"]
+
+    anime = animu[0]
+
+    for a in animu:
+        if a["popularity"] != 0:
+            anime = a
+            break
+
+    await ctx.send(embed=format_anime(anime))
 
 @client.event
 async def on_ready():
