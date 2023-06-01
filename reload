@@ -1,0 +1,23 @@
+#!/bin/bash
+
+usage="reload <test/prod>"
+
+botname=mmb
+
+function usage_exit {
+	echo "$usage"
+	exit 1
+}
+
+function deploy {
+	docker rm -f $botname-$1
+	docker run --name $botname-$1 -d -it $(docker build -q -f Dockerfile.$1 .)
+	exit 0
+}
+
+[[ -z $1 ]] && usage_exit
+
+[[ $1 == "prod" ]] && deploy $1
+[[ $1 == "test" ]] && deploy $1
+
+usage_exit
