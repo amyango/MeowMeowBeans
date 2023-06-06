@@ -4,6 +4,7 @@ from discord.ext import commands
 import requests
 import json
 import urllib
+import random
 
 api_url = "https://api.jikan.moe/v4/anime"
 
@@ -122,6 +123,35 @@ def format_anime(anime):
         embed.add_field(name=ch, value=va, inline=True)
     return embed
 
+# /any command
+@bot.command(description='Return a random animu',)
+async def any(ctx, *, arg=''):
+
+    # construct getTopAnime URL
+    top_url = "https://api.jikan.moe/v4/top/anime"
+
+    # make the parameter thinggies
+    #    type (tv/movie/ova/special/ona/music)
+    #    filter (airing/upcoming/bypopularity/favorite)
+    #    rating (g/pg/pg13/r17/r/rx)
+    #    sfw (true/false)
+    #    page
+    #    limit
+    payload = dict(type="tv", limit=1000, filter="bypopularity", sfw=True)
+    urllib.parse.urlencode(payload)
+
+    # send the request
+    response = requests.get(top_url, params=payload)
+
+    # read the result for the user person i guess idk
+    json_response = json.loads(response.text)
+    anime = json_response["data"]
+
+    # get a random number
+    num = random.randint(0, len(anime) - 1)
+
+    await ctx.send(str(num + 1) + ". " + anime[num]["title"])
+
 # /mmb command
 @bot.command(description='Return information about an anime',)
 async def mmb(ctx, *, arg=''):
@@ -145,6 +175,45 @@ async def mmb(ctx, *, arg=''):
             break
 
     await ctx.send(embed=format_anime(anime))
+
+    #####################################################
+    # Try to call getAnimePictures and show some pictures
+    #####################################################
+    #     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢲⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀       
+    #     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+    #     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠄⠂⢉⠤⠐⠋⠈⠡⡈⠉⠐⠠⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+    #     ⠀⠀⠀⠀⢀⡀⢠⣤⠔⠁⢀⠀⠀⠀⠀⠀⠀⠀⠈⢢⠀⠀⠈⠱⡤⣤⠄⣀⠀⠀⠀⠀⠀
+    #     ⠀⠀⠰⠁⠀⣰⣿⠃⠀⢠⠃⢸⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⠀⠀⠈⢞⣦⡀⠈⡇⠀⠀⠀
+    #     ⠀⠀⠀⢇⣠⡿⠁⠀⢀⡃⠀⣈⠀⠀⠀⠀⢰⡀⠀⠀⠀⠀⢢⠰⠀⠀⢺⣧⢰⠀⠀⠀⠀
+    #     ⠀⠀⠀⠈⣿⠁⡘⠀⡌⡇⠀⡿⠸⠀⠀⠀⠈⡕⡄⠀⠐⡀⠈⠀⢃⠀⠀⠾⠇⠀⠀⠀⠀
+    #     ⠀⠀⠀⠀⠇⡇⠃⢠⠀⠶⡀⡇⢃⠡⡀⠀⠀⠡⠈⢂⡀⢁⠀⡁⠸⠀⡆⠘⡀⠀⠀⠀⠀
+    #     ⠀⠀⠀⠸⠀⢸⠀⠘⡜⠀⣑⢴⣀⠑⠯⡂⠄⣀⣣⢀⣈⢺⡜⢣⠀⡆⡇⠀⢣⠀⠀⠀⠀
+    #     ⠀⠀⠀⠇⠀⢸⠀⡗⣰⡿⡻⠿⡳⡅⠀⠀⠀⠀⠈⡵⠿⠿⡻⣷⡡⡇⡇⠀⢸⣇⠀⠀⠀
+    #     ⠀⠀⢰⠀⠀⡆⡄⣧⡏⠸⢠⢲⢸⠁⠀⠀⠀⠀⠐⢙⢰⠂⢡⠘⣇⡇⠃⠀⠀⢹⡄⠀⠀
+    #     ⠀⠀⠟⠀⠀⢰⢁⡇⠇⠰⣀⢁⡜⠀⠀⠀⠀⠀⠀⠘⣀⣁⠌⠀⠃⠰⠀⠀⠀⠈⠰⠀⠀
+    #     ⠀⡘⠀⠀⠀⠀⢊⣤⠀⠀⠤⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠤⠄⠀⢸⠃⠀⠀⠀⠀⠀⠃⠀
+    #     ⢠⠁⢀⠀⠀⠀⠈⢿⡀⠀⠀⠀⠀⠀⠀⢀⡀⠀⠀⠀⠀⠀⠀⢀⠏⠀⠀⠀⠀⠀⠀⠸⠀
+    #     ⠘⠸⠘⡀⠀⠀⠀⠀⢣⠀⠀⠀⠀⠀⠀⠁⠀⠃⠀⠀⠀⠀⢀⠎⠀⠀⠀⠀⠀⢠⠀⠀⡇
+    #     ⠀⠇⢆⢃⠀⠀⠀⠀⠀⡏⢲⢤⢀⡀⠀⠀⠀⠀⠀⢀⣠⠄⡚⠀⠀⠀⠀⠀⠀⣾⠀⠀⠀
+    #     ⢰⠈⢌⢎⢆⠀⠀⠀⠀⠁⣌⠆⡰⡁⠉⠉⠀⠉⠁⡱⡘⡼⠇⠀⠀⠀⠀⢀⢬⠃⢠⠀⡆
+    #     ⠀⢢⠀⠑⢵⣧⡀⠀⠀⡿⠳⠂⠉⠀⠀⠀⠀⠀⠀⠀⠁⢺⡀⠀⠀⢀⢠⣮⠃⢀⠆⡰⠀
+    #     ⠀⠀⠑⠄⣀⠙⡭⠢⢀⡀⠀⠁⠄⣀⣀⠀⢀⣀⣀⣀⡠⠂⢃⡀⠔⠱⡞⢁⠄⣁⠔⠁⠀
+    #     ⠀⠀⠀⠀⠀⢠⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⠉⠁⠀⠀⠀⠀
+    #     ⠀⠀⠀⠀⠀⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀
+    #####################################################
+
+    #    mal_id = anime["mal_id"]
+    #    picture_url = api_url + "/" + str(mal_id) + "/pictures"
+    #    response = requests.get(picture_url)
+    #    json_response = json.loads(response.text)
+    #
+    #    print_json(json_response)
+    #    for i in json_response["data"]:
+    #        image = i["jpg"]["image_url"]
+    #        await ctx.send(image)
+    # image = json_response["data"][0]["jpg"]["image_url"]
+    # await ctx.send(image)
+
 
 @client.event
 async def on_ready():
