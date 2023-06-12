@@ -130,6 +130,11 @@ async def any(ctx, *, arg=''):
     # construct getTopAnime URL
     top_url = "https://api.jikan.moe/v4/top/anime"
 
+    # get a random number
+    num = random.randint(0, 999)
+    pageNum = num//25
+    num2 = num%25
+
     # make the parameter thinggies
     #    type (tv/movie/ova/special/ona/music)
     #    filter (airing/upcoming/bypopularity/favorite)
@@ -137,7 +142,7 @@ async def any(ctx, *, arg=''):
     #    sfw (true/false)
     #    page
     #    limit
-    payload = dict(type="tv", limit=1000, filter="bypopularity", sfw=True)
+    payload = dict(type="tv", limit=25, filter="bypopularity", sfw=True, page=pageNum)
     urllib.parse.urlencode(payload)
 
     # send the request
@@ -145,12 +150,15 @@ async def any(ctx, *, arg=''):
 
     # read the result for the user person i guess idk
     json_response = json.loads(response.text)
+
+    if not "data" in json_response:
+        await ctx.send("sad life it failed - probably got rate limited o:")
+        return
+
     anime = json_response["data"]
+    resultString = str(num + 1) + ") " + anime[num2]["title"]
 
-    # get a random number
-    num = random.randint(0, len(anime) - 1)
-
-    await ctx.send(str(num + 1) + ". " + anime[num]["title"])
+    await ctx.send(resultString)
 
 # /mmb command
 @bot.command(description='Return information about an anime',)
