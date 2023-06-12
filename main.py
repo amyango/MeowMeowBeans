@@ -51,7 +51,6 @@ def get_url(url, load):
     print_json(json_response)
     return json_response["data"]
 
-
 @bot.command(description='Search for a Character',)
 async def char(ctx, *, arg=''):
     
@@ -158,7 +157,84 @@ async def any(ctx, *, arg=''):
     anime = json_response["data"]
     resultString = str(num + 1) + ") " + anime[num2]["title"]
 
-    await ctx.send(resultString)
+    await ctx.send(resultString + "\nTELL ME SOME CHARACTERS\n")
+
+    # Getting the list of characters
+    mal_id = anime["mal_id"]
+    char_url = api_url + "/" + str(mal_id) + "/characters"
+    response = requests.get(char_url)
+    json_response = json.loads(response.text)
+    characters = json_response["data"]
+
+    for char in characters:
+        ch = char["character"]["name"]
+        va = ""
+
+        for v in char["voice_actors"]:
+            if v["language"] == "Japanese":
+                va = v["person"]["name"]
+                break
+        #embed.add_field(name=ch, value=va, inline=True)
+
+    # Waiting for people to tell us chracters in the list
+
+    # implement checkCharacter(character, anime) -- should return true/false if the character is in that anime
+    # implement points() -- keep track of how many characters a user got correct
+    # return an embed with all of the characters (crossed out if someone got it right)
+    # return who won and with how many points
+    # allow 30 seconds for people to answer
+    #       Probably don't allow anyone to start the game again if one is already going on
+
+def checkCharacter(character, characterList):
+    for char in characterList:
+        foundMatchThisLoop = False
+        foundWrongWord = False
+        character = character.replace(",", "")
+
+        ch = char["character"]["name"]
+        ch = ch.replace(",", "")
+        va = ""
+
+        if ch.lower() == character.lower():
+            return ch
+
+        for othername in character.split(" "):
+            for name in ch.split(" "):
+                if name.lower() == othername.lower():
+                    foundMatchThisLoop = True
+            if not foundMatchThisLoop:
+                foundWrongWord = True
+            foundMatchThisLoop = False # Reset this for the next word that the user typed in
+
+        if not foundWrongWord:
+            return ch
+
+    return ""
+
+# /mmb command
+@bot.command(description='Return information about an anime',)
+async def check(ctx, *, arg=''):
+    if arg == '':
+        await ctx.send("Type a character in my hero aca")
+        return
+
+    # Getting the list of characters
+    mal_id = "31964"
+    char_url = api_url + "/" + str(mal_id) + "/characters"
+    response = requests.get(char_url)
+    json_response = json.loads(response.text)
+    characters = json_response["data"]
+
+    # Waiting for people to tell us chracters in the list
+    result = checkCharacter(arg, characters)
+    if result != "":
+        await ctx.send("FOUND " + result)
+    else:
+        await ctx.send("NOT FOUND " + arg)
+    
+    # Allow First Names
+    # Allow Lowercase
+
 
 # /mmb command
 @bot.command(description='Return information about an anime',)
