@@ -6,7 +6,9 @@ import json
 import urllib
 import random
 
+# Variables
 api_url = "https://api.jikan.moe/v4/anime"
+pointsBook = {}
 
 # READ THE SUPER SECRET TOKEN
 key_file = open("credentials/discord.token", "r", encoding='ascii')
@@ -122,6 +124,12 @@ def format_anime(anime):
         embed.add_field(name=ch, value=va, inline=True)
     return embed
 
+# /points command
+@bot.command(description='Show user point totals',)
+async def points(ctx, *, arg=''):
+    # Returns how many points all the users have
+    await ctx.send(str(pointsBook))
+
 # /any command
 @bot.command(description='Return a random animu',)
 async def any(ctx, *, arg=''):
@@ -217,7 +225,7 @@ async def check(ctx, *, arg=''):
     if arg == '':
         await ctx.send("Type a character in my hero aca")
         return
-
+    
     # Getting the list of characters
     mal_id = "31964"
     char_url = api_url + "/" + str(mal_id) + "/characters"
@@ -228,13 +236,21 @@ async def check(ctx, *, arg=''):
     # Waiting for people to tell us chracters in the list
     result = checkCharacter(arg, characters)
     if result != "":
+        if str(ctx.author.id) in pointsBook:
+            pointsBook[str(ctx.author.id)] += 1
+        else:
+            pointsBook[str(ctx.author.id)] = 1
         await ctx.send("FOUND " + result)
     else:
         await ctx.send("NOT FOUND " + arg)
     
-    # Allow First Names
-    # Allow Lowercase
-
+#only allow characters once
+#timer
+#prob use names instead of numbers for user
+#state the winner
+#only one game at a time
+#implement random thingy
+#use embeds
 
 # /mmb command
 @bot.command(description='Return information about an anime',)
