@@ -5,6 +5,7 @@ import requests
 import json
 import urllib
 import random
+import asyncio
 
 # Variables
 api_url = "https://api.jikan.moe/v4/anime"
@@ -236,21 +237,44 @@ async def check(ctx, *, arg=''):
     # Waiting for people to tell us chracters in the list
     result = checkCharacter(arg, characters)
     if result != "":
-        if str(ctx.author.id) in pointsBook:
-            pointsBook[str(ctx.author.id)] += 1
+        if str(ctx.author.name) in pointsBook:
+            pointsBook[str(ctx.author.name)] += 1
         else:
-            pointsBook[str(ctx.author.id)] = 1
+            pointsBook[str(ctx.author.name)] = 1
         await ctx.send("FOUND " + result)
     else:
         await ctx.send("NOT FOUND " + arg)
     
 #only allow characters once
-#timer
-#prob use names instead of numbers for user
-#state the winner
 #only one game at a time
 #implement random thingy
 #use embeds
+#detect ties
+#use userid to index into map, keep both points and username
+
+@bot.command(description='start a game',)
+async def start(ctx, *, arg=''):
+
+    # clear all the points
+    global pointsBook
+    pointsBook = {}
+
+    # tell the people how long the game will last
+    await ctx.send("You have 30 seconds to name as many characters as you can")
+
+
+    # sleep for that long
+    await asyncio.sleep(30)
+
+    # declare the winner/show the point totals
+    winner = ""
+    for person in pointsBook:
+        if (winner == "") or (pointsBook[person] > pointsBook[winner]):
+            winner = person
+
+    await ctx.send(str(pointsBook))
+
+    await ctx.send("The winner is @" + winner + "!!!!")
 
 # /mmb command
 @bot.command(description='Return information about an anime',)
