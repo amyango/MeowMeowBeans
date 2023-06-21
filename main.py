@@ -10,6 +10,7 @@ import asyncio
 # Variables
 api_url = "https://api.jikan.moe/v4/anime"
 pointsBook = {}
+characterList = {}
 
 # READ THE SUPER SECRET TOKEN
 key_file = open("credentials/discord.token", "r", encoding='ascii')
@@ -139,7 +140,7 @@ async def any(ctx, *, arg=''):
     top_url = "https://api.jikan.moe/v4/top/anime"
 
     # get a random number
-    num = random.randint(0, 999)
+    num = random.randint(0, 99)
     pageNum = num//25
     num2 = num%25
 
@@ -164,16 +165,19 @@ async def any(ctx, *, arg=''):
         return
 
     anime = json_response["data"]
-    resultString = str(num + 1) + ") " + anime[num2]["title"]
+    resultString = str(num + 1) + ") " + anime[num2]["title"]  + "\n" + anime[num2]["title_english"] 
 
     await ctx.send(resultString + "\nTELL ME SOME CHARACTERS\n")
 
     # Getting the list of characters
-    mal_id = anime["mal_id"]
+    mal_id = anime[num2]["mal_id"]
     char_url = api_url + "/" + str(mal_id) + "/characters"
     response = requests.get(char_url)
     json_response = json.loads(response.text)
     characters = json_response["data"]
+
+    global characterList
+    characterList = characters
 
     for char in characters:
         ch = char["character"]["name"]
@@ -227,15 +231,15 @@ async def check(ctx, *, arg=''):
         await ctx.send("Type a character in my hero aca")
         return
     
-    # Getting the list of characters
-    mal_id = "31964"
-    char_url = api_url + "/" + str(mal_id) + "/characters"
-    response = requests.get(char_url)
-    json_response = json.loads(response.text)
-    characters = json_response["data"]
+#    # Getting the list of characters
+#    mal_id = "31964"
+#    char_url = api_url + "/" + str(mal_id) + "/characters"
+#    response = requests.get(char_url)
+#    json_response = json.loads(response.text)
+#    characters = json_response["data"]
 
     # Waiting for people to tell us chracters in the list
-    result = checkCharacter(arg, characters)
+    result = checkCharacter(arg, characterList)
     if result != "":
         if str(ctx.author.name) in pointsBook:
             pointsBook[str(ctx.author.name)] += 1
@@ -259,9 +263,11 @@ async def start(ctx, *, arg=''):
     global pointsBook
     pointsBook = {}
 
+    # get a random animu
+    await any(ctx)
+
     # tell the people how long the game will last
     await ctx.send("You have 30 seconds to name as many characters as you can")
-
 
     # sleep for that long
     await asyncio.sleep(30)
