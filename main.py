@@ -11,6 +11,8 @@ import asyncio
 api_url = "https://api.jikan.moe/v4/anime"
 pointsBook = {}
 characterList = {}
+current_anime = ""
+posteru = ""
 
 # READ THE SUPER SECRET TOKEN
 key_file = open("credentials/discord.token", "r", encoding='ascii')
@@ -22,6 +24,18 @@ bot = commands.Bot(command_prefix='/', intents=intents, debug_guilds=["103831254
 def print_json(dict):
     json_object = json.dumps(dict, indent=4)
     print(json_object)
+
+# TODO: Prettify the result points board
+# TODO: Sort characters by popularity
+# TODO: make mention work (might be able to do @<userid>)
+# TODO: LET US CANCEL GAMES IN PROGRESS/SKIP ANIMUS WE DONT KNOW
+# TODO: Variable game length
+def set_characterlist(characters):
+    global characterList
+    characterList = {}
+    for char in characters:
+        charname = char["character"]["name"]
+        characterList[charname] = Character(charname)
 
 @bot.command(description='Search for a Voice Actor',)
 async def va(ctx, *, arg=''):
@@ -99,6 +113,39 @@ async def char(ctx, *, arg=''):
 
     await ctx.send(embed=embed)
 
+class Character:
+    def __init__(self, name):
+        self.name = name
+        self.guessed = False
+        self.whoGuessed = "unguessed"
+
+    def __str__(self):
+        if self.guessed:
+            return self.name
+
+        result=""
+        for subname in self.name.split():
+            result = result + ('x' * len(subname)) + " "
+        return result
+
+def print_characterlist():
+
+    embed=discord.Embed(title=current_anime, description=current_anime, color=0xFF5733)
+    embed.set_thumbnail(url=posteru)
+    
+    i=0
+    for character in characterList:
+        if i > 41:
+            break
+
+        char = characterList[character]
+
+        print(str(char))
+
+        embed.add_field(name=str(char), value=char.whoGuessed, inline=True)
+        i += 1
+    return embed
+
 # Return an embed with information about anime
 def format_anime(anime):
     nameu = anime["title_japanese"]
@@ -114,7 +161,10 @@ def format_anime(anime):
     json_response = json.loads(response.text)
     characters = json_response["data"]
 
+    i=0
     for char in characters:
+        if i > 41:
+            break
         ch = char["character"]["name"]
         va = ""
 
@@ -124,6 +174,7 @@ def format_anime(anime):
                 break
 
         embed.add_field(name=ch, value=va, inline=True)
+        i += 1
     return embed
 
 # /points command
@@ -145,6 +196,7 @@ async def any(ctx, *, arg=''):
     num2 = num%25
 
     # make the parameter thinggies
+    print(json_response)
     #    type (tv/movie/ova/special/ona/music)
     #    filter (airing/upcoming/bypopularity/favorite)
     #    rating (g/pg/pg13/r17/r/rx)
@@ -162,10 +214,17 @@ async def any(ctx, *, arg=''):
 
     if not "data" in json_response:
         await ctx.send("sad life it failed - probably got rate limited o:")
+        print(json_response)
         return
 
     anime = json_response["data"]
     resultString = str(num + 1) + ") " + anime[num2]["title"]  + "\n" + anime[num2]["title_english"] 
+
+    global current_anime
+    current_anime = anime[num2]["title_english"]
+
+    global posteru
+    posteru = anime[num2]["images"]["jpg"]["image_url"]
 
     await ctx.send(resultString + "\nTELL ME SOME CHARACTERS\n")
 
@@ -176,8 +235,9 @@ async def any(ctx, *, arg=''):
     json_response = json.loads(response.text)
     characters = json_response["data"]
 
-    global characterList
-    characterList = characters
+    set_characterlist(characters)
+
+    await ctx.send(embed=print_characterlist())
 
     for char in characters:
         ch = char["character"]["name"]
@@ -198,13 +258,25 @@ async def any(ctx, *, arg=''):
     # allow 30 seconds for people to answer
     #       Probably don't allow anyone to start the game again if one is already going on
 
+# characterList: list of Character objects
+# Character Object:
+#    [Character            ]
+#    [  name: "All Might"  ]
+#    [  guessed: True      ]
+#    [  whoguessed: Yo Mama]
+# If you print when guessed is true, it prints the name
+# If you print when guessed is false, it prints all x's
 def checkCharacter(character, characterList):
-    for char in characterList:
+    for key in characterList:
+        char = characterList[key]
+        
+        if char.guessed:
+            continue
         foundMatchThisLoop = False
         foundWrongWord = False
         character = character.replace(",", "")
 
-        ch = char["character"]["name"]
+        ch = char.name
         ch = ch.replace(",", "")
         va = ""
 
@@ -220,9 +292,9 @@ def checkCharacter(character, characterList):
             foundMatchThisLoop = False # Reset this for the next word that the user typed in
 
         if not foundWrongWord:
-            return ch
+            return char
 
-    return ""
+    return None
 
 # /mmb command
 @bot.command(description='Return information about an anime',)
@@ -240,12 +312,15 @@ async def check(ctx, *, arg=''):
 
     # Waiting for people to tell us chracters in the list
     result = checkCharacter(arg, characterList)
-    if result != "":
+    if result != None:
         if str(ctx.author.name) in pointsBook:
             pointsBook[str(ctx.author.name)] += 1
         else:
             pointsBook[str(ctx.author.name)] = 1
-        await ctx.send("FOUND " + result)
+        result.guessed = True
+        result.whoGuessed = ctx.author.name
+        await ctx.send("FOUND " + result.name)
+        await ctx.send(embed=print_characterlist())
     else:
         await ctx.send("NOT FOUND " + arg)
     
