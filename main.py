@@ -30,6 +30,7 @@ def print_json(dict):
 # TODO: make mention work (might be able to do @<userid>)
 # TODO: LET US CANCEL GAMES IN PROGRESS/SKIP ANIMUS WE DONT KNOW
 # TODO: Variable game length
+# TODO: Reveal all of them at the end
 def set_characterlist(characters):
     global characterList
     characterList = {}
@@ -140,8 +141,6 @@ def print_characterlist():
 
         char = characterList[character]
 
-        print(str(char))
-
         embed.add_field(name=str(char), value=char.whoGuessed, inline=True)
         i += 1
     return embed
@@ -192,11 +191,14 @@ async def any(ctx, *, arg=''):
 
     # get a random number
     num = random.randint(0, 99)
-    pageNum = num//25
+    pageNum = ((num-1)//25) + 1
     num2 = num%25
+    # 24 = page 1
+    # 25 = page 1
+    # 26 = page 2
 
     # make the parameter thinggies
-    print(json_response)
+    # print(json_response)
     #    type (tv/movie/ova/special/ona/music)
     #    filter (airing/upcoming/bypopularity/favorite)
     #    rating (g/pg/pg13/r17/r/rx)
@@ -281,7 +283,7 @@ def checkCharacter(character, characterList):
         va = ""
 
         if ch.lower() == character.lower():
-            return ch
+            return char
 
         for othername in character.split(" "):
             for name in ch.split(" "):
@@ -301,6 +303,11 @@ def checkCharacter(character, characterList):
 async def check(ctx, *, arg=''):
     if arg == '':
         await ctx.send("Type a character in my hero aca")
+        return
+    
+    global current_anime
+    if current_anime == "":
+        await ctx.send("No game running, start one with /start")
         return
     
 #    # Getting the list of characters
@@ -342,20 +349,44 @@ async def start(ctx, *, arg=''):
     await any(ctx)
 
     # tell the people how long the game will last
-    await ctx.send("You have 30 seconds to name as many characters as you can")
+    await ctx.send("You have 60 seconds to name as many characters as you can")
+
+    anime = current_anime
 
     # sleep for that long
-    await asyncio.sleep(30)
+    await asyncio.sleep(60)
+
+    if current_anime != anime:
+        return
 
     # declare the winner/show the point totals
     winner = ""
+
     for person in pointsBook:
         if (winner == "") or (pointsBook[person] > pointsBook[winner]):
             winner = person
 
-    await ctx.send(str(pointsBook))
+    if winner == "":
+        await ctx.send("No winner, you all suck. Watch more anime. Weeb card revoked.")
 
-    await ctx.send("The winner is @" + winner + "!!!!")
+    embed=discord.Embed(title=":crown: " + winner + " - " + str(pointsBook[winner]), color=0xa9d9c6)
+    for person in pointsBook:
+        if person != winner:
+             embed.add_field(name=person + " - " + str(pointsBook[person]), value="", inline=False)
+    await ctx.send(embed=embed)
+
+    global current_anime
+    current_anime = ""
+
+    #await ctx.send(str(pointsBook))
+    #await ctx.send("The winner is @" + winner + "!!!!")
+
+# /mmb command
+@bot.command(description='Return information about an anime',)
+async def stop(ctx, *, arg=''):
+    global current_anime
+    current_anime = ""
+    return
 
 # /mmb command
 @bot.command(description='Return information about an anime',)
