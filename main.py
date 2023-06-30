@@ -11,8 +11,10 @@ import asyncio
 api_url = "https://api.jikan.moe/v4/anime"
 pointsBook = {}
 characterList = {}
+sortedCharacterList = []
 current_anime = ""
 posteru = ""
+characterlist_msg = None
 
 # READ THE SUPER SECRET TOKEN
 key_file = open("credentials/discord.token", "r", encoding='ascii')
@@ -239,7 +241,8 @@ async def any(ctx, *, arg=''):
 
     set_characterlist(characters)
 
-    await ctx.send(embed=print_characterlist())
+    global characterlist_msg
+    characterlist_msg = await ctx.send(embed=print_characterlist())
 
     for char in characters:
         ch = char["character"]["name"]
@@ -327,7 +330,8 @@ async def check(ctx, *, arg=''):
         result.guessed = True
         result.whoGuessed = ctx.author.name
         await ctx.send("FOUND " + result.name)
-        await ctx.send(embed=print_characterlist())
+        # await ctx.send(embed=print_characterlist())
+        await characterlist_msg.edit(embed=print_characterlist())
     else:
         await ctx.send("NOT FOUND " + arg)
     
@@ -341,6 +345,8 @@ async def check(ctx, *, arg=''):
 @bot.command(description='start a game',)
 async def start(ctx, *, arg=''):
 
+    global current_anime
+
     # clear all the points
     global pointsBook
     pointsBook = {}
@@ -349,7 +355,9 @@ async def start(ctx, *, arg=''):
     await any(ctx)
 
     # tell the people how long the game will last
-    await ctx.send("You have 60 seconds to name as many characters as you can")
+    id = await ctx.send("You have 60 seconds to name as many characters as you can")
+    print(id)
+    print(id.id)
 
     anime = current_anime
 
@@ -357,6 +365,7 @@ async def start(ctx, *, arg=''):
     await asyncio.sleep(60)
 
     if current_anime != anime:
+        print("returning early - " + anime + " != " + current_anime)
         return
 
     # declare the winner/show the point totals
@@ -368,14 +377,18 @@ async def start(ctx, *, arg=''):
 
     if winner == "":
         await ctx.send("No winner, you all suck. Watch more anime. Weeb card revoked.")
+        return
 
     embed=discord.Embed(title=":crown: " + winner + " - " + str(pointsBook[winner]), color=0xa9d9c6)
     for person in pointsBook:
         if person != winner:
              embed.add_field(name=person + " - " + str(pointsBook[person]), value="", inline=False)
-    await ctx.send(embed=embed)
 
-    global current_anime
+    global msg_id
+    msg_id = await ctx.send(embed=embed)
+
+    print(msg_id)
+
     current_anime = ""
 
     #await ctx.send(str(pointsBook))
@@ -462,8 +475,19 @@ async def on_message(message):
     if message.author.id == client.user.id:
         return
 
+    if message.content.startswith('test'):
+        await message.channel.send('test passed')
+
     if message.content.startswith('/mmb'):
         await message.channel.send('meowmeowbeans is alive')
+
+#@bot.event
+#async def on_ready():
+#    print('Online')
+#
+#@bot.event
+#async def on_message(message):
+#    print('Message')
 
 bot.run(key_file.read())
 #client.run(key_file.read())
